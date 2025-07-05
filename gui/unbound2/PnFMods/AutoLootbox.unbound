@@ -1,0 +1,137 @@
+(def element LootboxesInset () layout=true dispatch_size_change=true
+	(scope
+		(macro STAGE_SIZE)
+		(macro PULL_ROUTE "SC.Ui_windows.ROUTE.BARGE" "'isOnBarge'")
+		(var gfStateWatcher:gfx = "$datahub.getFirstWatcher(CC.gamefaceGlobalState)")
+		(var gfStateEntity:gfx = "gfStateWatcher.entity" (event "gfStateWatcher.event"))
+		(var gfStateComponent:gfx = "gfStateEntity ? gfStateEntity.gamefaceGlobalState : null")
+		(var gfStateHasControl:bool = "gfStateComponent ? gfStateComponent.gamefaceHasControl : false"	(event "gfStateComponent.evChanged")
+																										(event "gfStateComponent.evGamefaceHasControlChanged"))
+
+		(event evAddedToStage) 
+	)
+
+	(dispatch evAddedToStage on='addedToStage')
+
+	(name = "'LootboxesInset'")
+
+	(style (bind width "stageWidth") (bind height "stageHeight") (align = "center") (position = "absolute"))
+
+	(controller $Instance renderer='LootboxesContent'
+		(bind enabled "isOnBarge")
+	)
+
+	# Mod
+	(element AutoLootboxesCollector)
+	#
+)
+
+(def element LootboxesContent () layout=true
+	(class $FullsizeAbsolute)
+	(element GamefaceWidget
+		_gfName = "SC.Gameface.DATA_PROVIDER_NAME.LOOTBOXES"
+		_gfPath = 'gui/gameface/build/barge/index.html'
+	)
+
+	# Mod
+	(scope
+		(var userPrefsComponent:gfx = "$datahub.getSingleComponent(CC.userPrefs)")
+		(var userPrefs:gfx = "userPrefsComponent.userPrefs" watch=false (event "userPrefsComponent.evUserPrefsChanged"))
+
+		(var isAutoCollectorEnabled:bool = "null != userPrefs.elementsGroupExpand && null != userPrefs.elementsGroupExpand.autoCollectLootbox			? userPrefs.elementsGroupExpand.autoCollectLootbox : true")
+		(var selectedType:number = "null == userPrefs.selectedLootboxType && SC.Common.COMMON_LOOTBOX_TYPES.UNKNOWN != userPrefs.selectedLootboxType	? SC.Common.COMMON_LOOTBOX_TYPES.RESOURCES : userPrefs.selectedLootboxType")
+
+		(var currentItemIndex:number = "selectedType - 1")
+
+		# Must be identical to COMMON_LOOTBOX_TYPES. Credit: 1, Signals:2, Resources:3, Lucky: 4
+		(var containerTypes:array = "['IDS_ECONOMICS_LOOTBOX_DESC', 'IDS_SIGNALS_LOOTBOX_HEADER', 'IDS_RESOURCES_LOOTBOX_DESC_HEADER', 'IDS_CHANCE_LOOTBOX_DESC_HEADER']")
+		
+		(event ItemChooser_BoxTypeSelected)
+		(bindcall externalCall 'inputMapping.onAction' "['setUserPref', {'value': $event.selectedIndex + 1, 'name': 'selectedLootboxType'}]" init=false watch=false (event "ItemChooser_BoxTypeSelected"))
+		(var toggleAutoCollectorMethod:array = "[{ type: 'inputMapping.onAction', name: 'setUserPref', args: {'value': !isAutoCollectorEnabled, 'name': 'elementsGroupExpand', 'subName': 'autoCollectLootbox'} } ]")
+
+		(var bargeBannerCol:gfx = "$datahub.getCollection(CC.bargeBanner)")
+		(var numBanners:number = "bargeBannerCol ? bargeBannerCol.items.length : 0" (event "bargeBannerCol.evAdded") (event "bargeBannerCol.evRemoved"))
+
+		(var topPos:number = "64px + (120px + 16px) * max(numBanners, 1) + 160px + 7px")
+		# PageHeader__header height + (PromoBanner__wrapper height + PromoBanner__wrapper padding) * num banner + DailyContainer
+		# Recruit banner is always visible if there is no banner
+	)
+
+	(hblock
+		(style
+			(position = "absolute")
+			(bind top "topPos")
+			(width = 272px) # MainScreen__leftWrapper width
+			(left = 20px) # MainScreen__content padding-left
+			(paddingLeft = 16px) # DailyContainers__content padding
+
+			(visualOffsetX = -200%)
+			(alpha = 0)
+
+			(align = "middle|left")
+		)
+		(controller $Animation
+			(play
+				duration = "0.5 + 0.3" # MainScreen__leftWrapper transition + DEFAULT_LEFT_CONTAINER_ANIMATION transition delay
+				delay = "1.5 + 0.15" # DEFAULT_LEFT_CONTAINER_ANIMATION delay + DEFAULT_CHILD_VARIANTS_ANIMATION duration
+				from = "{visualOffsetX: -200%, alpha: 0}"
+				to = "{visualOffsetX: 0%, alpha: 1}"
+			)
+		)
+		
+		# ON/OFF
+		(element SwitchWithRightLabel
+			_state = "isAutoCollectorEnabled"
+			_label = "tr('IDS_AUTOPURCHASE') + ':'"
+			_methods = "toggleAutoCollectorMethod"
+		)
+		# Selector
+		(element ItemChooser
+			_items = "containerTypes"
+			_disabled = "!isAutoCollectorEnabled"
+			_listItemRenderer = "'TextListItemRenderer'"
+			_choosedItemRenderer = "'DefaultItemChooserPickedItemRenderer'"
+			_onItemSelectedEvent = "'BoxTypeSelected'"
+			_selectedMaxWidth = "200"
+			_dropDownWidth = "200"
+			_maxDropDownHeight = "200"
+			_curIndex = "currentItemIndex"
+			(style
+				(bind alpha "isAutoCollectorEnabled ? 1 : 0.7")
+			)
+		)
+	)
+	#
+)
+
+(def element AutoLootboxesCollector() layout=false
+	(scope
+		(var userPrefsComponent:gfx = "$datahub.getSingleComponent(CC.userPrefs)")
+		(var userPrefs:gfx = "userPrefsComponent.userPrefs" watch=false (event "userPrefsComponent.evUserPrefsChanged"))
+
+		(var isAutoCollectorEnabled:bool = "null != userPrefs.elementsGroupExpand && null != userPrefs.elementsGroupExpand.autoCollectLootbox			? userPrefs.elementsGroupExpand.autoCollectLootbox : true")
+		(var selectedType:number = "null == userPrefs.selectedLootboxType && SC.Common.COMMON_LOOTBOX_TYPES.UNKNOWN != userPrefs.selectedLootboxType	? SC.Common.COMMON_LOOTBOX_TYPES.RESOURCES : userPrefs.selectedLootboxType")
+
+		(var configComponent:gfx = "$datahub.getSingleComponent(CC.lootboxConfigComponent)")
+		(var storageComponent:gfx = "$datahub.getSingleComponent(CC.lootboxStorageComponent)")
+		(var maxPurchaseableBoxes:number = "configComponent ? configComponent.maxBought : 0" (event "configComponent.evPricesUpdate")(event "configComponent.evGameParamsUpdate"))
+		(var purchasedBoxes:number = "storageComponent ? storageComponent.boughtToday : 0" (event "storageComponent.evUpdate"))
+		(var lootboxExp:number = "storageComponent ? storageComponent.lootExp : 0" (event "storageComponent.evUpdate"))
+
+		(var isAllBoxesCollected:bool = "maxPurchaseableBoxes == purchasedBoxes")
+		(var isDailyBoxAvailable:bool = "lootboxExp >= configComponent.prices[purchasedBoxes]" (event "configComponent.evPricesUpdate"))
+
+		(var canCollectBox:bool = "isDailyBoxAvailable && !isAllBoxesCollected && isAutoCollectorEnabled")
+
+		(event evBuyDailyBox)
+
+		#(trace "'loaded'")
+		#(trace "canCollectBox")
+		#(trace "'called' + selectedType" watch=false init=false (event "evBuyDailyBox"))
+	)
+
+	(dispatch evBuyDailyBox args="{}" watch=false on=addedToStage (bind enabled "canCollectBox")(bind trigger "canCollectBox"))
+
+	(bindcall externalCall 'inputMapping.onAction' "['LootboxProxy.buyLootbox', {userChoiceType: selectedType, forceStart: true}]" init=false watch=false (event "evBuyDailyBox"))
+)
