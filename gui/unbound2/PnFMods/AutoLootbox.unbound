@@ -124,6 +124,7 @@
 
 		(var canCollectBox:bool = "isDailyBoxAvailable && !isAllBoxesCollected && isAutoCollectorEnabled")
 
+		(event onBoxPurchased)
 		(event evBuyDailyBox)
 
 		#(trace "'loaded'")
@@ -131,7 +132,10 @@
 		#(trace "'called' + selectedType" watch=false init=false (event "evBuyDailyBox"))
 	)
 
-	(dispatch evBuyDailyBox args="{}" watch=false on=addedToStage (bind enabled "canCollectBox")(bind trigger "canCollectBox"))
+	(dispatch onBoxPurchased args="{}" watch=false init=false (bind trigger "purchasedBoxes"))
+	(dispatch onAutoCollectChanged args="{}" watch=false init=false (bind trigger "canCollectBox"))
+	
+	(dispatch evBuyDailyBox args="{}" watch=false on=addedToStage (bind enabled "canCollectBox")(event "onBoxPurchased")(event "onAutoCollectChanged"))
 
 	(bindcall externalCall 'inputMapping.onAction' "['LootboxProxy.buyLootbox', {userChoiceType: selectedType, forceStart: true}]" init=false watch=false (event "evBuyDailyBox"))
 )
