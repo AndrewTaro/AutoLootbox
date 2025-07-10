@@ -51,11 +51,22 @@
 		(var toggleAutoCollectorMethod:array = "[{ type: 'inputMapping.onAction', name: 'setUserPref', args: {'value': !isAutoCollectorEnabled, 'name': 'elementsGroupExpand', 'subName': 'autoCollectLootbox'} } ]")
 
 		(var bargeBannerCol:gfx = "$datahub.getCollection(CC.bargeBanner)")
-		(var numBanners:number = "bargeBannerCol ? bargeBannerCol.items.length : 0" (event "bargeBannerCol.evAdded") (event "bargeBannerCol.evRemoved"))
+		(var numBargeBanners:number = "bargeBannerCol ? bargeBannerCol.items.length : 0" (event "bargeBannerCol.evAdded") (event "bargeBannerCol.evRemoved"))
 
-		(var topPos:number = "64px + (120px + 16px) * max(numBanners, 1) + 160px + 7px")
-		# PageHeader__header height + (PromoBanner__wrapper height + PromoBanner__wrapper padding) * num banner + DailyContainer
-		# Recruit banner is always visible if there is no banner
+		# LootboxesDataProvider
+		(var accountComponent:gfx = "$datahub.getSingleComponent(CC.accountSelf)")
+		(var recuitStatus:number = "accountComponent ? accountComponent.hasRecruitsStatus : SC.Common.HAS_RECRUITS_STATUS.UNKNOWN")
+		(var isRecruitBannerVisible:bool = "recuitStatus == SC.Common.HAS_RECRUITS_STATUS.NO")
+
+		(var numBanners:number = "numBargeBanners + isRecruitBannerVisible")
+
+		(var header:number = 64px)			# PageHeader__header height
+		(var banner:number = 120px)			# PromoBanner__wrapper height
+		(var marginBottom:number = 14px)	# BannersContent__content margin-bottom
+		(var dailyContainer:number = 160px)	# DailyContainer
+		(var offset:number = 7px)			# Offset
+
+		(var topPos:number = "header + (banner + marginBottom) * numBanners + dailyContainer + offset")
 	)
 
 	(hblock
