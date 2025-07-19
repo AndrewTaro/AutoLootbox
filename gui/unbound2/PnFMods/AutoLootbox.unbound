@@ -51,7 +51,8 @@
 		(var toggleAutoCollectorMethod:array = "[{ type: 'inputMapping.onAction', name: 'setUserPref', args: {'value': !isAutoCollectorEnabled, 'name': 'elementsGroupExpand', 'subName': 'autoCollectLootbox'} } ]")
 
 		(var bargeBannerCol:gfx = "$datahub.getCollection(CC.bargeBanner)")
-		(var numBargeBanners:number = "bargeBannerCol ? bargeBannerCol.items.length : 0" (event "bargeBannerCol.evAdded") (event "bargeBannerCol.evRemoved"))
+		(var numBargeBanners:number = "bargeBannerCol ? min(1, bargeBannerCol.items.length) : 0" (event "bargeBannerCol.evAdded") (event "bargeBannerCol.evRemoved"))
+		# max banners = 2 but its check is inclusive (banners <= 2 ? ok : no) so practically one banner is available apparently
 
 		# LootboxesDataProvider
 		(var accountComponent:gfx = "$datahub.getSingleComponent(CC.accountSelf)")
