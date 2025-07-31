@@ -2,7 +2,8 @@
 This modification automatically collects the daily containers of your choice.
 
 The mod also adds an option to disable the "Open All Lootboxes" button.
-![image](https://github.com/user-attachments/assets/330996bd-64fb-483a-9a78-4cd3f1606038)
+
+<img width="315" height="450" alt="image" src="https://github.com/user-attachments/assets/d10d82df-dfbf-471e-91d4-a270d19a2630" />
 
 
 # Install
