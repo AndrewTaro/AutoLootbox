@@ -143,7 +143,7 @@
 		(event evBuyDailyBox)
 	)
 
-	(dispatch onBoxPurchased args="{}"			watch=false init=false (bind trigger "purchasedBoxes"))
+	(dispatch onBoxPurchased args="{}"			watch=false init=false delay=1 (bind trigger "purchasedBoxes"))
 	(dispatch onAutoCollectChanged args="{}"	watch=false init=false (bind trigger "canCollectBox"))
 	(dispatch onAddedToStage args="{}"			watch=false init=false on=addedToStage)
 	
