@@ -19,6 +19,11 @@
 
 	(controller $Instance renderer='LootboxesContent'
 		(bind enabled "isOnBarge")
+		# Mod
+		(args
+			_isGamefaceTopWindow = "gfStateHasControl"
+		)
+		#
 	)
 
 	# Mod
@@ -26,7 +31,7 @@
 	#
 )
 
-(def element LootboxesContent () layout=true
+(def element LootboxesContent (_isGamefaceTopWindow:bool=false) layout=true
 	(class $FullsizeAbsolute)
 	(element GamefaceWidget
 		_gfName = "SC.Gameface.DATA_PROVIDER_NAME.LOOTBOXES"
@@ -68,6 +73,18 @@
 		(var offset:number = 7px)			# Offset
 
 		(var topPos:number = "header + (banner + marginBottom) * numBanners + dailyContainer + offset")
+
+		(var appearAnimDuration:number = "0.5 + 0.3") # MainScreen__leftWrapper transition + DEFAULT_LEFT_CONTAINER_ANIMATION transition delay
+		(var appearAnimDelay:number = "1.5 + 0.15") # DEFAULT_LEFT_CONTAINER_ANIMATION delay + DEFAULT_CHILD_VARIANTS_ANIMATION duration
+
+		(var ubZindex:number = "_isGamefaceTopWindow ? ZIndex.BACKGROUND : ZIndex.FOREGROUND")
+
+		(event evAddedToStage)
+	)
+
+	(dispatch evAddedToStage
+		args="{}"
+		init=false watch=false delay="appearAnimDelay" on='addedToStage'
 	)
 
 	(hblock
@@ -82,13 +99,14 @@
 			(alpha = 0)
 
 			(align = "middle|left")
+			(bind zindex "ubZindex")
 		)
 		(controller $Animation
-			(play
-				duration = "0.5 + 0.3" # MainScreen__leftWrapper transition + DEFAULT_LEFT_CONTAINER_ANIMATION transition delay
-				delay = "1.5 + 0.15" # DEFAULT_LEFT_CONTAINER_ANIMATION delay + DEFAULT_CHILD_VARIANTS_ANIMATION duration
+			(bindcall play
+				duration = "appearAnimDuration"
 				from = "{visualOffsetX: -200%, alpha: 0}"
 				to = "{visualOffsetX: 0%, alpha: 1}"
+				(event "evAddedToStage")
 			)
 		)
 		
@@ -97,6 +115,7 @@
 			_state = "isAutoCollectorEnabled"
 			_label = "tr('IDS_AUTOPURCHASE') + ':'"
 			_methods = "toggleAutoCollectorMethod"
+			_textClass = '$TextDefaultBoldNM'
 		)
 		# Selector
 		(element ItemChooser
