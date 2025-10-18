@@ -138,11 +138,23 @@
 
 (def element AutoLootboxesCollector() layout=false
 	(scope
+		(event evAutoCollectChanged)
+		(event evAddedToStage)
+		(event evBuyDailyBox)
+
 		(var userPrefsComponent:gfx = "$datahub.getSingleComponent(CC.userPrefs)")
 		(var userPrefs:gfx = "userPrefsComponent.userPrefs" watch=false (event "userPrefsComponent.evUserPrefsChanged"))
 
-		(var isAutoCollectorEnabled:bool = "null != userPrefs.elementsGroupExpand && null != userPrefs.elementsGroupExpand.autoCollectLootbox			? userPrefs.elementsGroupExpand.autoCollectLootbox : true")
-		(var selectedType:number = "null == userPrefs.selectedLootboxType && SC.Common.COMMON_LOOTBOX_TYPES.UNKNOWN != userPrefs.selectedLootboxType	? SC.Common.COMMON_LOOTBOX_TYPES.RESOURCES : userPrefs.selectedLootboxType")
+		(var isAutoCollectorEnabled:bool = "
+			userPrefs.elementsGroupExpand && null != userPrefs.elementsGroupExpand.autoCollectLootbox	? userPrefs.elementsGroupExpand.autoCollectLootbox
+																										: true"
+			watch=false (event "userPrefsComponent.evUserPrefsChanged")
+		)
+		(var selectedType:number = "
+			null != userPrefs.selectedLootboxType || SC.Common.COMMON_LOOTBOX_TYPES.UNKNOWN == userPrefs.selectedLootboxType	? SC.Common.COMMON_LOOTBOX_TYPES.RESOURCES
+																																: userPrefs.selectedLootboxType"
+			watch=false (event "userPrefsComponent.evUserPrefsChanged")
+		)
 
 		(var configComponent:gfx = "$datahub.getSingleComponent(CC.lootboxConfigComponent)")
 		(var storageComponent:gfx = "$datahub.getSingleComponent(CC.lootboxStorageComponent)")
@@ -150,27 +162,30 @@
 		(var purchasedBoxes:number = "storageComponent ? storageComponent.boughtToday : 0" (event "storageComponent.evUpdate"))
 		(var lootboxExp:number = "storageComponent ? storageComponent.lootExp : 0" (event "storageComponent.evUpdate"))
 
-		(var isAllBoxesCollected:bool = "maxPurchaseableBoxes == purchasedBoxes")
-		(var isDailyBoxAvailable:bool = "lootboxExp >= configComponent.prices[purchasedBoxes]" (event "configComponent.evPricesUpdate"))
+		(var isPurchaseLimitReached:bool = "maxPurchaseableBoxes <= purchasedBoxes")
+		(var isExpThresholdReached:bool = "lootboxExp >= configComponent.prices[purchasedBoxes]" (event "configComponent.evPricesUpdate"))
+		(var isDailyBoxAvailable:bool = "!isPurchaseLimitReached && isExpThresholdReached")
 
-		(var canCollectBox:bool = "isDailyBoxAvailable && !isAllBoxesCollected && isAutoCollectorEnabled")
+		(var lootboxAnimComponent:gfx = "$datahub.getSingleComponent(CC.lootboxAnimationState)")
+		(var isTransactionInProgress:bool = "lootboxAnimComponent ? lootboxAnimComponent.active : false" (event "lootboxAnimComponent.evActiveChanged"))
 
-		(event onBoxPurchased)
-		(event onAutoCollectChanged)
-		(event onAddedToStage)
-
-		(event evBuyDailyBox)
+		(var canCollectBox:bool = "isDailyBoxAvailable && isAutoCollectorEnabled && !isTransactionInProgress")
 	)
 
-	(dispatch onBoxPurchased args="{}"			watch=false init=false delay=1 (bind trigger "purchasedBoxes"))
-	(dispatch onAutoCollectChanged args="{}"	watch=false init=false (bind trigger "canCollectBox"))
-	(dispatch onAddedToStage args="{}"			watch=false init=false on=addedToStage)
-	
-	(dispatch evBuyDailyBox args="{}" watch=false
+	(dispatch evAutoCollectChanged	args="{}" watch=false init=false
+		(bind enabled "canCollectBox")(bind trigger "canCollectBox")
+	)
+	(dispatch evAddedToStage 		args="{}" watch=false init=false on=addedToStage
 		(bind enabled "canCollectBox")
-		(event "onBoxPurchased")
-		(event "onAutoCollectChanged")
-		(event "onAddedToStage")
 	)
-	(bindcall externalCall 'inputMapping.onAction' "['LootboxProxy.buyLootbox', {userChoiceType: selectedType, forceStart: true}]" init=false watch=false (event "evBuyDailyBox"))
+	
+	(dispatch evBuyDailyBox
+		args="{}" init=false watch=false
+		# (bind enabled "canCollectBox")
+		# This causes error when the continuous purchase is triggered.
+		# What the Hell is so wrong with this?!?! bind enabled is totally fucked up in this element I dont even know whats the problem.
+		(event "evAutoCollectChanged")
+		(event "evAddedToStage")
+	)
+	(bindcall externalCall 'inputMapping.onAction' "['LootboxProxy.buyLootbox', {userChoiceType: selectedType}]" init=false watch=false (event "evBuyDailyBox"))
 )
