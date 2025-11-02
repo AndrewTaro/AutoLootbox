@@ -31,6 +31,11 @@
 	#
 )
 
+(def macro ALB_GET_AUTO_LOOTBOX_PREFS ()
+	(var isAutoCollectorEnabled:bool = "userPrefs.elementsGroupExpand && null != userPrefs.elementsGroupExpand.autoCollectLootbox ? userPrefs.elementsGroupExpand.autoCollectLootbox : true")
+	(var selectedType:number = "null != userPrefs.selectedLootboxType && SC.Common.COMMON_LOOTBOX_TYPES.UNKNOWN != userPrefs.selectedLootboxType ? userPrefs.selectedLootboxType : SC.Common.COMMON_LOOTBOX_TYPES.RESOURCES")
+)
+
 (def element LootboxesContent (_isGamefaceTopWindow:bool=false) layout=true
 	(class $FullsizeAbsolute)
 	(element GamefaceWidget
@@ -43,8 +48,7 @@
 		(var userPrefsComponent:gfx = "$datahub.getSingleComponent(CC.userPrefs)")
 		(var userPrefs:gfx = "userPrefsComponent.userPrefs" watch=false (event "userPrefsComponent.evUserPrefsChanged"))
 
-		(var isAutoCollectorEnabled:bool = "null != userPrefs.elementsGroupExpand && null != userPrefs.elementsGroupExpand.autoCollectLootbox			? userPrefs.elementsGroupExpand.autoCollectLootbox : true")
-		(var selectedType:number = "null == userPrefs.selectedLootboxType && SC.Common.COMMON_LOOTBOX_TYPES.UNKNOWN != userPrefs.selectedLootboxType	? SC.Common.COMMON_LOOTBOX_TYPES.RESOURCES : userPrefs.selectedLootboxType")
+		(macro ALB_GET_AUTO_LOOTBOX_PREFS)
 
 		(var currentItemIndex:number = "selectedType - 1")
 
@@ -145,16 +149,7 @@
 		(var userPrefsComponent:gfx = "$datahub.getSingleComponent(CC.userPrefs)")
 		(var userPrefs:gfx = "userPrefsComponent.userPrefs" watch=false (event "userPrefsComponent.evUserPrefsChanged"))
 
-		(var isAutoCollectorEnabled:bool = "
-			userPrefs.elementsGroupExpand && null != userPrefs.elementsGroupExpand.autoCollectLootbox	? userPrefs.elementsGroupExpand.autoCollectLootbox
-																										: true"
-			watch=false (event "userPrefsComponent.evUserPrefsChanged")
-		)
-		(var selectedType:number = "
-			null != userPrefs.selectedLootboxType || SC.Common.COMMON_LOOTBOX_TYPES.UNKNOWN == userPrefs.selectedLootboxType	? SC.Common.COMMON_LOOTBOX_TYPES.RESOURCES
-																																: userPrefs.selectedLootboxType"
-			watch=false (event "userPrefsComponent.evUserPrefsChanged")
-		)
+		(macro ALB_GET_AUTO_LOOTBOX_PREFS)
 
 		(var configComponent:gfx = "$datahub.getSingleComponent(CC.lootboxConfigComponent)")
 		(var storageComponent:gfx = "$datahub.getSingleComponent(CC.lootboxStorageComponent)")
