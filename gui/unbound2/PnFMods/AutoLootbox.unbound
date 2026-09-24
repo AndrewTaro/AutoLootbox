@@ -19,20 +19,15 @@
 
 	(controller $Instance renderer='LootboxesContent'
 		(bind enabled "isOnBarge")
-		# Mod
 		(args
 			_isGamefaceTopWindow = "gfStateHasControl"
 		)
-		#
 	)
-
-	# Mod
-	(element AutoLootboxesCollector)
-	#
 )
 
 (def macro ALB_GET_AUTO_LOOTBOX_PREFS ()
-	(var isAutoCollectorEnabled:bool = "userPrefs.elementsGroupExpand && null != userPrefs.elementsGroupExpand.autoCollectLootbox ? userPrefs.elementsGroupExpand.autoCollectLootbox : true")
+	(macro TT_GET_PREF _varName="'autoEnablePref'" _key="'ttaro.autoLootbox.enable'")
+	(var isAutoCollectorEnabled:bool = "null != autoEnablePref && null != autoEnablePref.value ? autoEnablePref.value : false")
 	(var selectedType:number = "null != userPrefs.selectedLootboxType && SC.Common.COMMON_LOOTBOX_TYPES.UNKNOWN != userPrefs.selectedLootboxType ? userPrefs.selectedLootboxType : SC.Common.COMMON_LOOTBOX_TYPES.RESOURCES")
 )
 
@@ -43,7 +38,6 @@
 		_gfPath = 'gui/gameface/build/barge/index.html'
 	)
 
-	# Mod
 	(scope
 		(var userPrefsComponent:gfx = "$datahub.getSingleComponent(CC.userPrefs)")
 		(var userPrefs:gfx = "userPrefsComponent.userPrefs" watch=false (event "userPrefsComponent.evUserPrefsChanged"))
@@ -52,34 +46,32 @@
 
 		(var currentItemIndex:number = "selectedType - 1")
 
-		# Must be identical to COMMON_LOOTBOX_TYPES. Credit: 1, Signals:2, Resources:3, Lucky: 4
 		(var containerTypes:array = "['IDS_ECONOMICS_LOOTBOX_DESC', 'IDS_SIGNALS_LOOTBOX_HEADER', 'IDS_RESOURCES_LOOTBOX_DESC_HEADER', 'IDS_CHANCE_LOOTBOX_DESC_HEADER']")
 		
 		(event ItemChooser_BoxTypeSelected)
 		(bindcall externalCall 'inputMapping.onAction' "['setUserPref', {'value': $event.selectedIndex + 1, 'name': 'selectedLootboxType'}]" init=false watch=false (event "ItemChooser_BoxTypeSelected"))
-		(var toggleAutoCollectorMethod:array = "[{ type: 'inputMapping.onAction', name: 'setUserPref', args: {'value': !isAutoCollectorEnabled, 'name': 'elementsGroupExpand', 'subName': 'autoCollectLootbox'} } ]")
+		(event ALB_evToggleAuto)
+		(bindcall externalCall 'direct.action' "['mod.setPref', ['ttaro.autoLootbox.enable', !isAutoCollectorEnabled]]" init=false watch=false (event "ALB_evToggleAuto"))
 
 		(var bargeBannerCol:gfx = "$datahub.getCollection(CC.bargeBanner)")
 		(var numBargeBanners:number = "bargeBannerCol ? min(2, bargeBannerCol.items.length) : 0" (event "bargeBannerCol.evAdded") (event "bargeBannerCol.evRemoved"))
-		# max banners seems to be fixed but i dont know
 
-		# LootboxesDataProvider
 		(var accountComponent:gfx = "$datahub.getSingleComponent(CC.accountSelf)")
 		(var recuitStatus:number = "accountComponent ? accountComponent.hasRecruitsStatus : SC.Common.HAS_RECRUITS_STATUS.UNKNOWN")
 		(var isRecruitBannerVisible:bool = "recuitStatus == SC.Common.HAS_RECRUITS_STATUS.NO")
 
 		(var numBanners:number = "numBargeBanners + isRecruitBannerVisible")
 
-		(var header:number = 64px)			# PageHeader__header height
-		(var banner:number = 120px)			# PromoBanner__wrapper height
-		(var marginBottom:number = 14px)	# BannersContent__content margin-bottom
-		(var dailyContainer:number = 160px)	# DailyContainer
-		(var offset:number = 7px)			# Offset
+		(var header:number = 64px)
+		(var banner:number = 120px)
+		(var marginBottom:number = 14px)
+		(var dailyContainer:number = 160px)
+		(var offset:number = 7px)
 
 		(var topPos:number = "header + (banner + marginBottom) * numBanners + dailyContainer + offset")
 
-		(var appearAnimDuration:number = "0.5 + 0.3") # MainScreen__leftWrapper transition + DEFAULT_LEFT_CONTAINER_ANIMATION transition delay
-		(var appearAnimDelay:number = "1.5 + 0.15") # DEFAULT_LEFT_CONTAINER_ANIMATION delay + DEFAULT_CHILD_VARIANTS_ANIMATION duration
+		(var appearAnimDuration:number = "0.5 + 0.3")
+		(var appearAnimDelay:number = "1.5 + 0.15")
 
 		(var ubZindex:number = "_isGamefaceTopWindow ? ZIndex.BACKGROUND : ZIndex.FOREGROUND")
 
@@ -95,9 +87,9 @@
 		(style
 			(position = "absolute")
 			(bind top "topPos")
-			(width = 272px) # MainScreen__leftWrapper width
-			(left = 20px) # MainScreen__content padding-left
-			(paddingLeft = 16px) # DailyContainers__content padding
+			(width = 272px)
+			(left = 20px)
+			(paddingLeft = 16px)
 
 			(visualOffsetX = -200%)
 			(alpha = 0)
@@ -114,14 +106,12 @@
 			)
 		)
 		
-		# ON/OFF
 		(element SwitchWithRightLabel
 			_state = "isAutoCollectorEnabled"
 			_label = "tr('IDS_AUTOPURCHASE') + ':'"
-			_methods = "toggleAutoCollectorMethod"
+			_dispatchedEv = "'ALB_evToggleAuto'"
 			_textClass = '$TextDefaultBoldNM'
 		)
-		# Selector
 		(element ItemChooser
 			_items = "containerTypes"
 			_disabled = "!isAutoCollectorEnabled"
@@ -137,50 +127,4 @@
 			)
 		)
 	)
-	#
-)
-
-(def element AutoLootboxesCollector() layout=false
-	(scope
-		(event evAutoCollectChanged)
-		(event evAddedToStage)
-		(event evBuyDailyBox)
-
-		(var userPrefsComponent:gfx = "$datahub.getSingleComponent(CC.userPrefs)")
-		(var userPrefs:gfx = "userPrefsComponent.userPrefs" watch=false (event "userPrefsComponent.evUserPrefsChanged"))
-
-		(macro ALB_GET_AUTO_LOOTBOX_PREFS)
-
-		(var configComponent:gfx = "$datahub.getSingleComponent(CC.lootboxConfigComponent)")
-		(var storageComponent:gfx = "$datahub.getSingleComponent(CC.lootboxStorageComponent)")
-		(var maxPurchaseableBoxes:number = "configComponent ? configComponent.maxBought : 0" (event "configComponent.evPricesUpdate")(event "configComponent.evGameParamsUpdate"))
-		(var purchasedBoxes:number = "storageComponent ? storageComponent.boughtToday : 0" (event "storageComponent.evUpdate"))
-		(var lootboxExp:number = "storageComponent ? storageComponent.lootExp : 0" (event "storageComponent.evUpdate"))
-
-		(var isPurchaseLimitReached:bool = "maxPurchaseableBoxes <= purchasedBoxes")
-		(var isExpThresholdReached:bool = "lootboxExp >= configComponent.prices[purchasedBoxes]" (event "configComponent.evPricesUpdate"))
-		(var isDailyBoxAvailable:bool = "!isPurchaseLimitReached && isExpThresholdReached")
-
-		(var lootboxAnimComponent:gfx = "$datahub.getSingleComponent(CC.lootboxAnimationState)")
-		(var isTransactionInProgress:bool = "lootboxAnimComponent ? lootboxAnimComponent.active : false" (event "lootboxAnimComponent.evActiveChanged"))
-
-		(var canCollectBox:bool = "isDailyBoxAvailable && isAutoCollectorEnabled && !isTransactionInProgress")
-	)
-
-	(dispatch evAutoCollectChanged	args="{}" watch=false init=false
-		(bind enabled "canCollectBox")(bind trigger "canCollectBox")
-	)
-	(dispatch evAddedToStage 		args="{}" watch=false init=false on=addedToStage
-		(bind enabled "canCollectBox")
-	)
-	
-	(dispatch evBuyDailyBox
-		args="{}" init=false watch=false
-		# (bind enabled "canCollectBox")
-		# This causes error when the continuous purchase is triggered.
-		# What the Hell is so wrong with this?!?! bind enabled is totally fucked up in this element I dont even know whats the problem.
-		(event "evAutoCollectChanged")
-		(event "evAddedToStage")
-	)
-	(bindcall externalCall 'inputMapping.onAction' "['LootboxProxy.buyLootbox', {userChoiceType: selectedType}]" init=false watch=false (event "evBuyDailyBox"))
 )

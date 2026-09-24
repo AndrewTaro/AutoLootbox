@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 5,
+  "id": "cmua6phxu0001v0yoch3w6b7s",
+  "author": "ttaro",
+  "modName": "Auto Lootbox",
+  "slug": "auto-lootbox",
+  "order": 25,
+  "tree": [
+    {
+      "kind": "setting",
+      "control": "toggle",
+      "key": "autoLootbox.enable",
+      "label": "IDS_AUTOPURCHASE",
+      "default": true
+    }
+  ]
+}
