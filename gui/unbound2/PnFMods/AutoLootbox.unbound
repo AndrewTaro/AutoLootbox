@@ -19,9 +19,11 @@
 
 	(controller $Instance renderer='LootboxesContent'
 		(bind enabled "isOnBarge")
+
 		(args
 			_isGamefaceTopWindow = "gfStateHasControl"
 		)
+
 	)
 )
 
@@ -38,6 +40,7 @@
 		_gfPath = 'gui/gameface/build/barge/index.html'
 	)
 
+
 	(scope
 		(var userPrefsComponent:gfx = "$datahub.getSingleComponent(CC.userPrefs)")
 		(var userPrefs:gfx = "userPrefsComponent.userPrefs" watch=false (event "userPrefsComponent.evUserPrefsChanged"))
@@ -45,6 +48,7 @@
 		(macro ALB_GET_AUTO_LOOTBOX_PREFS)
 
 		(var currentItemIndex:number = "selectedType - 1")
+
 
 		(var containerTypes:array = "['IDS_ECONOMICS_LOOTBOX_DESC', 'IDS_SIGNALS_LOOTBOX_HEADER', 'IDS_RESOURCES_LOOTBOX_DESC_HEADER', 'IDS_CHANCE_LOOTBOX_DESC_HEADER']")
 		
@@ -55,6 +59,8 @@
 
 		(var bargeBannerCol:gfx = "$datahub.getCollection(CC.bargeBanner)")
 		(var numBargeBanners:number = "bargeBannerCol ? min(2, bargeBannerCol.items.length) : 0" (event "bargeBannerCol.evAdded") (event "bargeBannerCol.evRemoved"))
+
+
 
 		(var accountComponent:gfx = "$datahub.getSingleComponent(CC.accountSelf)")
 		(var recuitStatus:number = "accountComponent ? accountComponent.hasRecruitsStatus : SC.Common.HAS_RECRUITS_STATUS.UNKNOWN")
@@ -106,12 +112,14 @@
 			)
 		)
 		
+
 		(element SwitchWithRightLabel
 			_state = "isAutoCollectorEnabled"
 			_label = "tr('IDS_AUTOPURCHASE') + ':'"
 			_dispatchedEv = "'ALB_evToggleAuto'"
 			_textClass = '$TextDefaultBoldNM'
 		)
+
 		(element ItemChooser
 			_items = "containerTypes"
 			_disabled = "!isAutoCollectorEnabled"
@@ -127,4 +135,5 @@
 			)
 		)
 	)
+
 )

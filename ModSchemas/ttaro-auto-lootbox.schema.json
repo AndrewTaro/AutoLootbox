@@ -5,6 +5,7 @@
   "modName": "Auto Lootbox",
   "slug": "auto-lootbox",
   "order": 25,
+  "migrationVersion": 0,
   "tree": [
     {
       "kind": "setting",
